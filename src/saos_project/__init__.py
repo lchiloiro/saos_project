@@ -113,34 +113,40 @@ def upload_file():
             if not os.path.exists(file_path):
                 return 'Errore durante il salvataggio del file', 500
 
-            return {
-                'message': 'File caricato con successo',
-                'original_name': original_filename,
-                'saved_as': safe_filename
-            }
+        info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
+        sub = info.get('sub')
 
+        if sub:
+            db = get_db()
+            if db:
+                try:
+                    cur = db.cursor()
+
+                    # Verifica se il sub esiste già
+                    cur.execute("SELECT id FROM users WHERE id_keycloak = %s", (sub,))
+                    existing_user = cur.fetchone()
+
+                    cur.execute("INSERT INTO files (pathname, user_id) VALUES (%s,%s)", (file_path, existing_user[0]))
+                    db.commit()
+                    app.logger.info(
+                            f"Nuovo utente inserito con successo nel database: {info.get('preferred_username')}")
+                    cur.close()
+                except Exception as e:
+                    error_message = f"Errore durante l'operazione sul database: {e}"
+                    app.logger.error(error_message)
+        return {
+            'message': 'File caricato con successo',
+            'original_name': original_filename,
+            'saved_as': safe_filename
+        }
     except Exception as e:
-        # Log dell'errore (in un ambiente di produzione dovresti usare un logger appropriato)
         print(f"Errore durante l'upload del file: {str(e)}")
-        return 'Si è verificato un errore durante il caricamento del file', 500
+        return 'Si è verificato un errore durante il caricamento del file'
 
 # Gestione dell'errore per file troppo grandi
 @app.errorhandler(413)
 def too_large(e):
     return f'File troppo grande. Dimensione massima: {MAX_CONTENT_LENGTH/1024/1024}MB', 413
-
-
-# Route protetta che richiede autenticazione
-#@app.route('/protected')
-#@oidc.require_login
-#def protected():
-    #info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
-    #return jsonify({
-        #'message': 'Accesso protetto riuscito!',
-        #'username': info.get('preferred_username'),
-        #'sub': info.get('sub'),
-        #'email': info.get('email')
-    #})
 
 @app.route('/protected')
 @oidc.require_login
@@ -157,13 +163,13 @@ def protected():
                 cur = db.cursor()
 
                 # Verifica se il sub esiste già
-                cur.execute("SELECT id_keycloak FROM users WHERE id_keycloak = %s", sub)
+                cur.execute("SELECT id_keycloak FROM users WHERE id_keycloak = %s", (sub,))
                 existing_user = cur.fetchone()
 
                 # Se il sub non esiste, lo inserisce
                 if not existing_user:
                     app.logger.info(f"Nuovo utente rilevato con sub: {sub}. Procedendo con l'inserimento nel database")
-                    cur.execute("INSERT INTO users (id_keycloak) VALUES (%s)",sub)
+                    cur.execute("INSERT INTO users (id_keycloak) VALUES (%s)",(sub,))
                     db.commit()
                     app.logger.info(f"Nuovo utente inserito con successo nel database: {info.get('preferred_username')}")
                 else:
@@ -192,8 +198,6 @@ def protected():
         'sub': sub,
         'email': info.get('email')
     })
-
-
 
 @app.route('/login')
 def login():
