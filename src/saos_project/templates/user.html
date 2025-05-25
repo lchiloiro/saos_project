@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilo Utente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .user-icon {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 15px;
+            background-color: #f0f0f0;
+            border-radius: 50%;
+            padding: 25px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 600px) {
+            .user-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-header">
+            <svg class="user-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="#666"/>
+                <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z" fill="#666"/>
+            </svg>
+            <h1>{{ user[2] }} {{ user[3] }}</h1>
+        </div>
+
+        <div class="user-info">
+            <div class="info-card">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ user[1] }}</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">Telefono</div>
+                <div class="info-value">{{ user[4] }}</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">Data di Nascita</div>
+                <div class="info-value">{{ user[5] }}</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">Indirizzo</div>
+                <div class="info-value">{{ user[6] }}</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">Città</div>
+                <div class="info-value">{{ user[7] }}</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">Ruolo</div>
+                <div class="info-value">
+                  {% if user[8] is not none %}
+                    <div> {{user[8]}} </div>
+                  {% else %}
+                    <div>In attesa di assegnazione</div>
+                  {% endif %}
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-bottom: 15px;">
+            <a href="/" style="
+                text-decoration: none;
+                color: #4a90e2;
+                background-color: #e3f2fd;
+                padding: 8px 15px;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+                display: inline-block;
+            "> 🏡 Home </a>
+        </div>
+
+    </div>
+</body>
+</html>

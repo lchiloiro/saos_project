@@ -143,6 +143,35 @@
             display: none;
         }
 
+        .uploaded-files {
+        margin-top: 20px;
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+        .uploaded-files h3 {
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+
+        .uploaded-files-list {
+            list-style: none;
+        }
+
+        .uploaded-files-list li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .uploaded-files-list li:last-child {
+            border-bottom: none;
+        }
+
         @media (max-width: 480px) {
             .upload-container {
                 padding: 20px;
@@ -185,6 +214,26 @@
                 <span class="file-type">TXT</span>
             </div>
         </div>
+        <div class="uploaded-files">
+            <h3>File Caricati</h3>
+            <ul class="uploaded-files-list" id="uploadedFilesList">
+                {% for file in files %}
+                    <li> {{file[0]}} </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div style="text-align: right; margin-bottom: 15px;">
+        <a href="/protected" style="
+            text-decoration: none;
+            color: #4a90e2;
+            background-color: #e3f2fd;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        "> 👤 Il mio profilo </a>
     </div>
 
     <script>

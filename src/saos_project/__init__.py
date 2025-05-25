@@ -7,6 +7,7 @@ from flask import Flask, jsonify, g, redirect
 from flask_oidc import OpenIDConnect
 import os
 import uuid
+import jwt
 
 app = Flask(__name__)
 
@@ -49,8 +50,6 @@ def close_db(e=None):
     if e is not None:
         app.logger.error(f"Errore durante la chiusura del database: {e}")
 
-
-
 oidc = OpenIDConnect(app)
 
 # Configurazioni
@@ -62,6 +61,97 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+def search_user():
+    info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
+    sub = info.get('sub')
+
+    if not sub:
+        return None
+    db = get_db()
+    if not db:
+        return None
+    existing_user=None
+    try:
+        cur = db.cursor()
+        # Verifica se il sub esiste già
+        cur.execute("SELECT id FROM users WHERE id_keycloak = %s", (sub,))
+        existing_user = cur.fetchone()
+        cur.close()
+    except Exception as e:
+        error_message = f"Errore durante l'operazione sul database: {e}"
+        app.logger.error(error_message)
+    return existing_user
+
+def insert_user():
+    info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
+    sub = info.get('sub')
+    user=search_user()
+    db = get_db()
+    if not db:
+        return None
+    try:
+        if not user:
+            cur = db.cursor()
+            cur.execute("INSERT INTO users (id_keycloak) VALUES (%s)", (sub,))
+            db.commit()
+            cur.close()
+            app.logger.info(f"Nuovo utente inserito con successo nel database: {info.get('preferred_username')}")
+        else:
+            app.logger.info(f"Utente già presente nel database con sub: {sub}")
+    except Exception as e:
+            error_message = f"Errore durante l'operazione sul database: {e}"
+            app.logger.error(error_message)
+            db.rollback()
+            return jsonify({
+                'message': 'Errore durante l\'accesso al database',
+                'error': error_message
+            }), 500
+    app.logger.info(f"Accesso protetto completato con successo per l'utente: {info.get('preferred_username')}")
+
+    access_token = oidc.get_access_token()
+    decoded = jwt.decode(access_token, options={"verify_signature": False})
+    roles = decoded.get('realm_access', {}).get('roles', [])
+    roles = [role for role in roles if role in ("Viewer", "Editor", "Admin")]
+
+    return (info.get('preferred_username'),
+            info.get('email'), info.get('given_name'),
+            info.get('family_name'), info.get('telefono'),
+            info.get('data_nascita'), info.get('indirizzo'),
+            info.get('citta'), roles[0])
+
+def search_file():
+    user=search_user()
+    db = get_db()
+    if not db:
+        return None
+    files=[]
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT original_filename FROM files WHERE user_id = %s", (user[0],))
+        files = cur.fetchall()
+        cur.close()
+    except Exception as e:
+        error_message = f"Errore durante l'operazione sul database: {e}"
+        app.logger.error(error_message)
+    return files
+
+def save_file(original_filename, file_path):
+    existing_user = search_user()
+    db = get_db()
+    if not db:
+        return None
+    try:
+        cur = db.cursor()
+        cur.execute("INSERT INTO files (pathname, user_id, original_filename) VALUES (%s,%s,%s)", (file_path, existing_user[0], original_filename))
+        db.commit()
+        cur.close()
+        app.logger.info(
+            f"Nuovo file inserito con successo nel database")
+    except Exception as e:
+        error_message = f"Errore durante l'operazione sul database: {e}"
+        app.logger.error(error_message)
+    return None
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -79,10 +169,13 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 @app.route('/')
+@oidc.require_login
 def home():
-    return render_template('index.html')
+    files=search_file()
+    return render_template('index.html', files=files)
 
 @app.route('/upload', methods=['POST'])
+@oidc.require_login
 def upload_file():
     try:
         # Verifica se la richiesta contiene un file
@@ -113,27 +206,8 @@ def upload_file():
             if not os.path.exists(file_path):
                 return 'Errore durante il salvataggio del file', 500
 
-        info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
-        sub = info.get('sub')
+            save_file(original_filename, file_path)
 
-        if sub:
-            db = get_db()
-            if db:
-                try:
-                    cur = db.cursor()
-
-                    # Verifica se il sub esiste già
-                    cur.execute("SELECT id FROM users WHERE id_keycloak = %s", (sub,))
-                    existing_user = cur.fetchone()
-
-                    cur.execute("INSERT INTO files (pathname, user_id) VALUES (%s,%s)", (file_path, existing_user[0]))
-                    db.commit()
-                    app.logger.info(
-                            f"Nuovo utente inserito con successo nel database: {info.get('preferred_username')}")
-                    cur.close()
-                except Exception as e:
-                    error_message = f"Errore durante l'operazione sul database: {e}"
-                    app.logger.error(error_message)
         return {
             'message': 'File caricato con successo',
             'original_name': original_filename,
@@ -151,53 +225,8 @@ def too_large(e):
 @app.route('/protected')
 @oidc.require_login
 def protected():
-    info = oidc.user_getinfo(['preferred_username', 'email', 'sub'])
-    sub = info.get('sub')
-
-    app.logger.info(f"Accesso alla route protetta da utente con sub: {sub}")
-
-    if sub:
-        db = get_db()
-        if db:
-            try:
-                cur = db.cursor()
-
-                # Verifica se il sub esiste già
-                cur.execute("SELECT id_keycloak FROM users WHERE id_keycloak = %s", (sub,))
-                existing_user = cur.fetchone()
-
-                # Se il sub non esiste, lo inserisce
-                if not existing_user:
-                    app.logger.info(f"Nuovo utente rilevato con sub: {sub}. Procedendo con l'inserimento nel database")
-                    cur.execute("INSERT INTO users (id_keycloak) VALUES (%s)",(sub,))
-                    db.commit()
-                    app.logger.info(f"Nuovo utente inserito con successo nel database: {info.get('preferred_username')}")
-                else:
-                    app.logger.info(f"Utente già presente nel database con sub: {sub}")
-
-                cur.close()
-
-            except Exception as e:
-                error_message = f"Errore durante l'operazione sul database: {e}"
-                app.logger.error(error_message)
-                db.rollback()
-                return jsonify({
-                    'message': 'Errore durante l\'accesso al database',
-                    'error': error_message
-                }), 500
-    else:
-        app.logger.error("Nessun sub ricevuto dall'autenticazione")
-        return jsonify({
-            'message': 'Errore: sub non trovato',
-        }), 400
-
-    app.logger.info(f"Accesso protetto completato con successo per l'utente: {info.get('preferred_username')}")
-    return jsonify({
-        'message': 'Accesso protetto riuscito!',
-        'username': info.get('preferred_username'),
-        'sub': sub,
-        'email': info.get('email')
-    })
+    user = insert_user()
+    return render_template('user.html', user=user)
 
 @app.route('/login')
 def login():
