@@ -72,6 +72,53 @@
             font-size: 1.1em;
         }
 
+        .navigation-links {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #4a90e2;
+            background-color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            background-color: #e3f2fd;
+        }
+
+        .nav-link .icon {
+            font-size: 1.2em;
+        }
+
+        .nav-link .text {
+            font-weight: 500;
+        }
+
+        @media (max-width: 480px) {
+            .navigation-links {
+                position: static;
+                margin: 20px auto;
+                width: 100%;
+                max-width: 600px;
+                padding: 0 20px;
+            }
+        }
+
         @media (max-width: 600px) {
             .user-info {
                 grid-template-columns: 1fr;
@@ -86,58 +133,57 @@
                 <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="#666"/>
                 <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z" fill="#666"/>
             </svg>
-            <h1>{{ user[2] }} {{ user[3] }}</h1>
+            <h1>{{ user.nome }} {{ user.cognome }}</h1>
         </div>
 
         <div class="user-info">
             <div class="info-card">
                 <div class="info-label">Email</div>
-                <div class="info-value">{{ user[1] }}</div>
+                <div class="info-value">{{ user.email }}</div>
             </div>
 
             <div class="info-card">
                 <div class="info-label">Telefono</div>
-                <div class="info-value">{{ user[4] }}</div>
+                <div class="info-value">{{ user.telefono }}</div>
             </div>
 
             <div class="info-card">
                 <div class="info-label">Data di Nascita</div>
-                <div class="info-value">{{ user[5] }}</div>
+                <div class="info-value">{{ user.data_nascita }}</div>
             </div>
 
             <div class="info-card">
                 <div class="info-label">Indirizzo</div>
-                <div class="info-value">{{ user[6] }}</div>
+                <div class="info-value">{{ user.indirizzo }}</div>
             </div>
 
             <div class="info-card">
                 <div class="info-label">Città</div>
-                <div class="info-value">{{ user[7] }}</div>
+                <div class="info-value">{{ user.citta }}</div>
             </div>
 
             <div class="info-card">
                 <div class="info-label">Ruolo</div>
                 <div class="info-value">
-                  {% if user[8] is not none %}
-                    <div> {{user[8]}} </div>
+                  {% if user.ruolo is not none %}
+                    <div> {{user.ruolo}} </div>
                   {% else %}
                     <div>In attesa di assegnazione</div>
                   {% endif %}
                 </div>
             </div>
         </div>
-        <div style="text-align: center; margin-bottom: 15px;">
-            <a href="/" style="
-                text-decoration: none;
-                color: #4a90e2;
-                background-color: #e3f2fd;
-                padding: 8px 15px;
-                border-radius: 5px;
-                transition: all 0.3s ease;
-                display: inline-block;
-            "> 🏡 Home </a>
-        </div>
-
     </div>
+    <div class="navigation-links">
+        <a href="/" class="nav-link">
+            <span class="icon">🏡️</span>
+            <span class="text">Home</span>
+        </a>
+        <a href="/doc" class="nav-link">
+            <span class="icon">🗂️</span>
+            <span class="text">Sezione documenti</span>
+        </a>
+    </div>
+
 </body>
 </html>
