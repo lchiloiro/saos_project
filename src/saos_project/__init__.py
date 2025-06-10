@@ -1,7 +1,7 @@
 from logging import exception
-
 import psycopg2
 from flask import Flask, request, render_template, abort, url_for, session
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from flask import Flask, jsonify, g, redirect
 from flask_oidc import OpenIDConnect
@@ -21,8 +21,10 @@ app.config.update({
     'OIDC_USER_INFO_ENABLED': True,
     'OIDC_OPENID_REALM': 'soi3',
     'OIDC_SCOPES': ['openid', 'email', 'profile'],
-    'OIDC_INTROSPECTION_AUTH_METHOD': 'client_secret_post'
+    'OIDC_INTROSPECTION_AUTH_METHOD': 'client_secret_post',
 })
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Configurazione database PostgreSQL
 DB_CONFIG = {

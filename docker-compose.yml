@@ -3,22 +3,39 @@ services:
     build: .
     ports:
       - 8080:5000
-    extra_hosts:
-      - host.docker.internal:host-gateway
+    networks:
+      saos-network:
+        aliases:
+          - app.saos.local
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2.4
     ports:
       - 8081:8080
-    extra_hosts:
-      - host.docker.internal:host-gateway
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin1
-    command:
-      - start-dev
+    command: [ "start-dev", "--proxy-headers", "xforwarded", "--hostname-strict=false", "--hostname", "https://keycloak.saos.local", "--hostname-backchannel-dynamic", "true", "--http-port", "80" ]
     volumes:
       - ./keycloak:/opt/keycloak/data/
+    networks:
+      saos-network:
+        aliases:
+          - keycloak.saos.local
+
+  caddy:
+    image: caddy:2.8.4
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - saos-network
 
   db:
     image: postgres:17.5
@@ -31,6 +48,8 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+    networks:
+      - saos-network
 
   db-webui:
     image: clidey/whodb
@@ -39,6 +58,15 @@ services:
       - 8082:8080
     environment:
       - WHODB_POSTGRES_1={"host":"db","user":"admin","password":"admin","database":"postgres"}
+    networks:
+      - saos-network
 
 volumes:
   pgdata:
+  caddy_config:
+  caddy_data:
+
+
+networks:
+  saos-network:
+    driver: bridge

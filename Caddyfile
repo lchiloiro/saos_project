@@ -1,0 +1,14 @@
+app.saos.local {
+    reverse_proxy saos-project:5000
+    tls internal
+}
+
+keycloak.saos.local {
+    reverse_proxy keycloak:80
+    tls internal
+}
+
+db.saos.local {
+    reverse_proxy db-webui:8080
+    tls internal
+}
