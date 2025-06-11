@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/admin.css')}}">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Files caricati</th>
+                    <th>Ruolo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users_files %}
+                <tr>
+                    <td>{{user.user_info.username}}</td>
+                    <td>{{user.user_info.email}}</td>
+                    <td>
+                        {% if user.files %}
+                        {% for file in user.files %}
+                            <a href="{{file.pathname}}" class="file-link">{{file.filename}}</a>
+                            <br>
+                        {% endfor %}
+                        {% else %}
+                            Nessun file caricato
+                        {% endif %}
+                    </td>
+                    <td>
+                    {% if user.user_info.roles is not none %}
+                        <div> {{user.user_info.roles|join(', ')}}</div>
+                        {% else %}
+                            <div>In attesa di assegnazione</div>
+                    {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="navigation-links">
+        <a href="/" class="nav-link">
+            <span class="icon">🏡️</span>
+            <span class="text">Home</span>
+        </a>
+    </div>
+</body>
+</html>

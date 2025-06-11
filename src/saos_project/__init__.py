@@ -10,6 +10,7 @@ import uuid
 import jwt
 import json
 import requests
+from itertools import groupby
 
 app = Flask(__name__)
 
@@ -65,7 +66,6 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
-
 
 def get_user_info():
     try:
@@ -206,24 +206,48 @@ def get_user_by_sub(sub_id):
     issuer_url = config['issuer']
     admin_base = issuer_url.replace('/realms/', '/admin/realms/')
     user_url = f"{admin_base}/users/{sub_id}"
+    roles_url = f"{user_url}/role-mappings/realm"
 
     headers = {'Authorization': f'Bearer {token}'}
+    VALID_ROLES = {'admin', 'viewer', 'editor'}
 
+    # Ottieni informazioni base dell'utente
     response = requests.get(user_url, headers=headers)
     if response.status_code == 200:
         user = response.json()
-        app.logger.info(f"Dati utente ricevuti da Keycloak: {user}")  # Log dei dati ricevuti
+        app.logger.info(f"Dati raw utente da Keycloak: {user}")  # Log per debug
 
-        # Controlliamo anche altri possibili campi per nome e cognome
-        firstName = user.get('firstName') or user.get('given_name') or user.get('givenName')
-        lastName = user.get('lastName') or user.get('family_name') or user.get('familyName')
+        # Proviamo diversi campi possibili per lo username
+        username = (user.get('username') or
+                    user.get('preferred_username') or
+                    user.get('userName') or
+                    user.get('user_name') or
+                    '')
 
-        app.logger.info(f"Nome: {firstName}, Cognome: {lastName}")  # Log dei valori estratti
+        app.logger.info(f"Username trovato: {username}")  # Log per debug
 
-        return {
-            'firstName': firstName,
-            'lastName': lastName
+        # Ottieni i ruoli
+        roles = []
+        roles_response = requests.get(roles_url, headers=headers)
+        if roles_response.status_code == 200:
+            raw_roles = roles_response.json()
+            all_roles = [role.get('name', '').lower() for role in raw_roles]
+            roles = [role for role in all_roles if role in VALID_ROLES]
+
+        user_info = {
+            'username': username,
+            'email': user.get('email', ''),
+            'nome': user.get('given_name', ''),
+            'cognome': user.get('family_name', ''),
+            'telefono': user.get('telefono', ''),
+            'data_nascita': user.get('data_nascita', ''),
+            'indirizzo': user.get('indirizzo', ''),
+            'citta': user.get('citta', ''),
+            'roles': roles
         }
+
+        app.logger.info(f"Informazioni utente complete: {user_info}")  # Log per debug
+        return user_info
     elif response.status_code == 404:
         app.logger.error(f"Utente con sub {sub_id} non trovato in Keycloak")
         return None
@@ -285,6 +309,49 @@ def get_user_roles():
     # Filtra solo i ruoli permessi
     roles = [role for role in roles if role in ("Viewer", "Editor", "Admin")]
     return roles
+
+def get_users_and_files():
+    db = get_db()
+    if not db:
+        return None
+    users_files = []
+    try:
+        cur = db.cursor()
+        cur.execute("""
+                    SELECT u.id, u.id_keycloak, f.original_filename, f.pathname
+                    FROM users u
+                             LEFT JOIN files f ON u.id = f.user_id
+                    ORDER BY u.id
+                    """)
+        results = cur.fetchall()
+        cur.close()
+
+        # Raggruppa per user_id
+        for user_id, group in groupby(results, key=lambda x: x[0]):
+            group_list = list(group)
+            id_keycloak = group_list[0][1]
+
+            # Ottieni informazioni utente da Keycloak
+            user_info = get_user_by_sub(id_keycloak)
+
+            files = [
+                {'filename': row[2], 'pathname': row[3]}
+                for row in group_list
+                if row[2] and row[3]
+            ]
+
+            users_files.append({
+                'user_id': user_id,
+                'user_info': user_info,
+                'files': files
+            })
+
+    except Exception as e:
+        error_message = f"Errore durante l'operazione sul database: {e}"
+        app.logger.error(error_message)
+        return None
+
+    return users_files
 
 @app.route('/')
 @oidc.require_login
@@ -367,6 +434,17 @@ def doc():
         })
 
     return render_template('doc.html', files=files_with_users)
+
+@app.route('/admin')
+@oidc.require_login
+def admin():
+    # Verifica se l'utente ha il ruolo di Admin
+    roles = get_user_roles()
+    if 'Admin' not in roles:
+        abort(403)  # Forbidden
+
+    users_files = get_users_and_files()
+    return render_template('admin.html', users_files=users_files)
 
 @app.route('/login')
 def login():
