@@ -13,3 +13,4 @@ uploads
 src/saos_project/client_secrets.json
 
 
+/.env

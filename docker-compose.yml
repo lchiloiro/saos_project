@@ -1,6 +1,9 @@
 services:
   saos-project:
     build: .
+    volumes:
+      - "./uploads:/uploads"
+    env_file: ".env"
     ports:
       - 8080:5000
     networks:
