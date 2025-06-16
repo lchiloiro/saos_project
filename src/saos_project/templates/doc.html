@@ -26,11 +26,11 @@
                 <div class="file-icon">📄</div>
                 <div class="file-name">{{file.file_info[4]}}</div>
                 <div class="file-info">
-                    <div>Caricato il: {{file.file_info[3]}}</div>
+                    <div>Caricato il: {{file.file_info[3].strftime('%d/%m/%Y %H:%M') }}</div>
                     <div>Da: {{file.user.nome}} {{file.user.cognome}}</div>
                 </div>
                 <div class="file-actions">
-                    <a href="{{file.file_info[1]}}" class="btn btn-view">Visualizza</a>
+                    <a href="{{file.file_info[1]}}" target="_blank" class="btn btn-view">Visualizza</a>
                 </div>
             </div>
             {% endfor %}

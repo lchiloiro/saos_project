@@ -23,14 +23,18 @@
                     <td>{{user.user_info.username}}</td>
                     <td>{{user.user_info.email}}</td>
                     <td>
-                        {% if user.files %}
-                        {% for file in user.files %}
-                            <a href="{{file.pathname}}" class="file-link">{{file.filename}}</a>
-                            <br>
-                        {% endfor %}
-                        {% else %}
-                            Nessun file caricato
-                        {% endif %}
+                        <ul>
+                            {% if user.files %}
+                            {% for file in user.files %}
+                            <li>
+                                <a href="{{file.pathname}}" target="_blank">{{file.filename}}</a>
+                                <span class="file-status"> - <strong>Stato:</strong> {{file.status}}</span>
+                            </li>
+                            {% endfor %}
+                            {% else %}
+                                Nessun file caricato
+                            {% endif %}
+                        </ul>
                     </td>
                     <td>
                     {% if user.user_info.roles is not none %}

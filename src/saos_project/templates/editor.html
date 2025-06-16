@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor - File in attesa</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/editor.css')}}">
+</head>
+<body>
+    <div class="content">
+        <h2>File in attesa di approvazione</h2>
+
+        {% if files %}
+            <table class="pending-table">
+                <thead>
+                    <tr>
+                        <th>Nome File</th>
+                        <th>Utente</th>
+                        <th>Data</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                        <tr>
+                            <td><a href="{{ file[1] }}" target="_blank">{{ file.file[4] }}</a></td>
+                            <td>{{file.user.nome}} {{file.user.cognome}}</td>
+                            <td>{{ file.file[3].strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td><span class="status-badge">In attesa</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn-approve" onclick="approveFile({{ file.file[0] }})">
+                                        Approva
+                                    </button>
+                                    <button class="btn-reject" onclick="rejectFile({{ file.file[0] }})">
+                                        Rifiuta
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="no-files-message">
+                Non ci sono file in attesa di approvazione.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="navigation-links">
+        <a href="/" class="nav-link">
+            <span class="icon">🏡️</span>
+            <span class="text">Home</span>
+        </a>
+    </div>
+    <script src="{{url_for('static', filename='js/editor.js')}}"></script>
+</body>
+</html>

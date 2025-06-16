@@ -1,9 +1,9 @@
 from saos_project import app, oidc
 from saos_project.const import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH
-from flask import render_template, request, send_from_directory, abort, session
+from flask import render_template, request, send_from_directory, abort, session, jsonify
 from werkzeug.utils import secure_filename
 from saos_project.user import get_user_info, insert_user, get_user_roles, get_sub_by_id, get_users_and_files, get_user_by_sub
-from saos_project.file import search_file, save_file, allowed_file, generate_safe_filename, search_files
+from saos_project.file import search_file, save_file, allowed_file, generate_safe_filename, search_files, search_pending_files, approve_file, reject_file
 import os
 
 # Gestione dell'errore per file troppo grandi
@@ -106,6 +106,51 @@ def uploaded_file(filename):
     except Exception as e:
         app.logger.error(f"Errore durante il recupero del file: {e}")
         abort(404)
+
+@app.route('/editor')
+@oidc.require_login
+def editor():
+    # Verifica se l'utente ha il ruolo di Editor
+    roles = get_user_roles()
+    if 'Editor' not in roles:
+        abort(403)
+
+    # Ottieni tutti i file in attesa di revisione
+    files = search_pending_files()
+    files_with_users = []
+
+    # Per ogni file, ottieni le informazioni dell'utente che lo ha caricato
+    for file in files:
+        id_user = file[2]  # assumendo che l'id dell'utente sia nella terza posizione
+        sub = get_sub_by_id(id_user)
+        user_info = get_user_by_sub(sub)
+
+        files_with_users.append({
+            'file': file,
+            'user': user_info
+        })
+
+    return render_template('editor.html', files=files_with_users)
+
+@app.route('/approve/<int:file_id>', methods=['POST'])
+def handle_approve_file(file_id):
+    # Verifica se l'utente ha il ruolo di Editor
+    roles = get_user_roles()
+    if 'Editor' not in roles:
+        abort(403)
+
+    success = approve_file(file_id)
+    return jsonify({'success': success})
+
+@app.route('/reject/<int:file_id>', methods=['POST'])
+def handle_reject_file(file_id):
+    # Verifica se l'utente ha il ruolo di Editor
+    roles = get_user_roles()
+    if 'Editor' not in roles:
+        abort(403)
+
+    success = reject_file(file_id)
+    return jsonify({'success': success})
 
 @app.route('/login')
 def login():

@@ -12,7 +12,7 @@ def search_file():
     files=[]
     try:
         cur = db.cursor()
-        cur.execute("SELECT original_filename FROM files WHERE user_id = %s", (user[0],))
+        cur.execute("SELECT original_filename, pathname, status FROM files WHERE user_id = %s", (user[0],))
         files = cur.fetchall()
         cur.close()
     except Exception as e:
@@ -27,7 +27,22 @@ def search_files():
     files=[]
     try:
         cur = db.cursor()
-        cur.execute("SELECT * FROM files", ())
+        cur.execute("SELECT * FROM files WHERE status = 'approved'", ())
+        files = cur.fetchall()
+        cur.close()
+    except Exception as e:
+        error_message = f"Errore durante l'operazione sul database: {e}"
+        app.logger.error(error_message)
+    return files
+
+def search_pending_files():
+    db = get_db()
+    if not db:
+        return None
+    files=[]
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT * FROM files WHERE status = 'pending'", ())
         files = cur.fetchall()
         cur.close()
     except Exception as e:
@@ -62,3 +77,39 @@ def generate_safe_filename(filename):
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
     # Genera un nome file unico con UUID
     return f"{uuid.uuid4()}.{ext}"
+
+def approve_file(file_id):
+    db = get_db()
+    if not db:
+        return None
+    try:
+        cur = db.cursor()
+        cur.execute(
+            "UPDATE files SET status = 'approved' WHERE id = %s",
+            (file_id,)
+        )
+        db.commit()
+        cur.close()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Errore durante l'approvazione del file: {str(e)}")
+        return False
+
+def reject_file(file_id):
+    db = get_db()
+    if not db:
+        return None
+    try:
+        cur = db.cursor()
+        cur.execute(
+            "UPDATE files SET status = 'rejected' WHERE id = %s",
+            (file_id,)
+        )
+        db.commit()
+        cur.close()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Errore durante il rifiuto del file: {str(e)}")
+        return False

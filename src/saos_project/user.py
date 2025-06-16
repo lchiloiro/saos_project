@@ -193,7 +193,7 @@ def get_users_and_files():
     try:
         cur = db.cursor()
         cur.execute("""
-                    SELECT u.id, u.id_keycloak, f.original_filename, f.pathname
+                    SELECT u.id, u.id_keycloak, f.original_filename, f.pathname, f.status
                     FROM users u
                              LEFT JOIN files f ON u.id = f.user_id
                     ORDER BY u.id
@@ -210,9 +210,9 @@ def get_users_and_files():
             user_info = get_user_by_sub(id_keycloak)
 
             files = [
-                {'filename': row[2], 'pathname': row[3]}
+                {'filename': row[2], 'pathname': row[3], 'status': row[4]}
                 for row in group_list
-                if row[2] and row[3]
+                if row[2] and row[3] and row[4]
             ]
 
             users_files.append({

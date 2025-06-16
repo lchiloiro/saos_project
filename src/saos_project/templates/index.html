@@ -31,22 +31,35 @@
                 <span class="file-type">PDF</span>
                 <span class="file-type">PNG</span>
                 <span class="file-type">JPG</span>
-                <span class="file-type">GIF</span>
-                <span class="file-type">DOC</span>
-                <span class="file-type">DOCX</span>
+                <span class="file-type">JPEG</span>
                 <span class="file-type">TXT</span>
             </div>
         </div>
+
         <div class="uploaded-files">
             <h3>File caricati da te</h3>
-            <ul class="uploaded-files-list" id="uploadedFilesList">
-                {% for file in files %}
-                    <li> {{file[0]}} </li>
-                {% endfor %}
-            </ul>
+            <div class="uploaded-files-list" id="uploadedFilesList">
+                <table class="files-table">
+                    <thead>
+                        <tr>
+                            <th>Nome File</th>
+                            <th>Stato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr>
+                            <td><a href="{{file[1]}}" target="_blank">{{file[0]}}</a></td>
+                            <td><span class="status-badge status-{{file[2]|lower|replace(' ', '-')}}">{{file[2]}}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
+    </div>
     <div class="navigation-links">
         <a href="/protected" class="nav-link">
             <span class="icon">👤</span>
@@ -60,6 +73,12 @@
             <a href="/admin" class="nav-link">
                 <span class="icon">👨🏼‍💼️</span>
                 <span class="text">Sezione amministrazione</span>
+            </a>
+        {% endif %}
+        {% if 'Editor' in session.get('user_roles', []) %}
+            <a href="/editor" class="nav-link">
+                <span class="icon">👨🏼‍💻️</span>
+                <span class="text">Sezione editor</span>
             </a>
        {% endif %}
     </div>
