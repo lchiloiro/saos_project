@@ -1,6 +1,6 @@
 from saos_project import app, oidc
 from saos_project.const import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH
-from flask import render_template, request, send_from_directory, abort, session, jsonify
+from flask import render_template, request, send_from_directory, abort, session, jsonify, redirect, url_for
 from werkzeug.utils import secure_filename
 from saos_project.user import get_user_info, insert_user, get_user_roles, get_sub_by_id, get_users_and_files, get_user_by_sub
 from saos_project.file import search_file, save_file, allowed_file, generate_safe_filename, search_files, search_pending_files, approve_file, reject_file
@@ -155,7 +155,21 @@ def handle_reject_file(file_id):
 @app.route('/login')
 def login():
     return oidc.redirect_to_auth_server(request.args.get('next', '/'))
+@app.route('/exit')
+def exit():
+    app.logger.info("Starting test logout process")
 
-@app.route('/logout')
-def logout():
-    pass
+    # Logout locale
+    oidc.logout()
+    session.clear()
+
+    # Costruisci l'URL di logout con il redirect
+    redirect_uri = url_for('home', _external=True)
+    keycloak_logout_url = (
+        "https://keycloak.saos.local/realms/soi3/protocol/openid-connect/logout"
+        f"?client_id=myclient"
+        f"&post_logout_redirect_uri={redirect_uri}"
+    )
+
+    app.logger.info(f"Redirecting to Keycloak logout: {keycloak_logout_url}")
+    return redirect(keycloak_logout_url)

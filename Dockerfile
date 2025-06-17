@@ -19,6 +19,6 @@ COPY ./src/saos_project/client_secrets.json /app/client_secrets.json
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["flask", "--app", "saos_project", "run", "--host", "0.0.0.0"]
+CMD ["flask", "--app", "saos_project", "run", "--host", "0.0.0.0", "--debug"]
 
 STOPSIGNAL SIGINT

@@ -1,5 +1,5 @@
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, jsonify, g
+from flask import Flask
 from flask_oidc import OpenIDConnect
 import os
 from saos_project.const import UPLOAD_FOLDER, MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS
