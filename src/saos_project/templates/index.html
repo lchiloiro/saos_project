@@ -47,12 +47,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for file in files %}
-                        <tr>
-                            <td><a href="{{file[1]}}" target="_blank">{{file[0]}}</a></td>
-                            <td><span class="status-badge status-{{file[2]|lower|replace(' ', '-')}}">{{file[2]}}</span></td>
-                        </tr>
-                        {% endfor %}
+                        {% if files %}
+                            {% for file in files %}
+                            <tr>
+                                <td><a href="{{file[1]}}" target="_blank">{{file[0]}}</a></td>
+                                <td><span class="status-badge status-{{file[2]|lower|replace(' ', '-')}}">{{file[2]}}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="text-align: center;">Nessun file caricato</td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>

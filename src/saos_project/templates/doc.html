@@ -21,24 +21,31 @@
 
 
         <div class="files-grid" id="filesGrid">
-            {% for file in files %}
-            <div class="file-card">
-                <div class="file-icon">📄</div>
-                <div class="file-name">{{file.file_info[4]}}</div>
-                <div class="file-info">
-                    <div>Caricato il: {{file.file_info[3].strftime('%d/%m/%Y %H:%M') }}</div>
-                    <div>Da: {{file.user.nome}} {{file.user.cognome}}</div>
+            {% if files %}
+                {% for file in files %}
+                <div class="file-card">
+                    <div class="file-icon">📄</div>
+                    <div class="file-name">{{file.file_info[4]}}</div>
+                    <div class="file-info">
+                        <div>Caricato il: {{file.file_info[3].strftime('%d/%m/%Y %H:%M') }}</div>
+                        <div>Da: {{file.user.nome}} {{file.user.cognome}}</div>
+                    </div>
+                    <div class="file-actions">
+                        <a href="{{file.file_info[1]}}" target="_blank" class="btn btn-view">Visualizza</a>
+                    </div>
                 </div>
-                <div class="file-actions">
-                    <a href="{{file.file_info[1]}}" target="_blank" class="btn btn-view">Visualizza</a>
+                {% endfor %}
+            {% else %}
+                <div class="no-files">
+                    Nessun file caricato
                 </div>
-            </div>
-            {% endfor %}
+            {% endif %}
 
             <div class="no-results" id="noResults">
                 Nessun file trovato con questi criteri di ricerca.
             </div>
         </div>
+
     </div>
 
     <div class="navigation-links">

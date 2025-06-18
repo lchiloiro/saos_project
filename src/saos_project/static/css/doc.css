@@ -220,6 +220,13 @@ h1 {
 .files-grid.list-view .no-results.show,
 .files-grid:not(.list-view) .no-results.show {display: block;}
 
+.no-files {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 1.2rem;
+}
+
 @media (max-width: 768px) {
     .navigation-links {
         position: static;
