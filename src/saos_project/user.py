@@ -26,7 +26,7 @@ def get_user_info():
             'data_nascita': info.get('data_nascita', ''),
             'indirizzo': info.get('indirizzo', ''),
             'citta': info.get('citta', ''),
-            'ruolo': roles[0] if roles else ''
+            'ruolo': roles[0] if roles else None
         }
     except Exception as e:
         app.logger.error(f"Errore in get_user_info: {e}")
