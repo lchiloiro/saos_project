@@ -12,3 +12,8 @@ db.saos.local {
     reverse_proxy db-webui:8080
     tls internal
 }
+
+kibana.saos.local {
+    reverse_proxy kibana:5601
+    tls internal
+}

@@ -28,7 +28,7 @@
                             {% for file in user.files %}
                             <li>
                                 <a href="{{file.pathname}}" target="_blank">{{file.filename}}</a>
-                                <span class="file-status"> - <strong>Stato:</strong> {{file.status}}</span>
+                                <span class="file-status"> - <strong>Stato:</strong> <span class="status-badge status-{{file.status|lower|replace(' ', '-')}}">{{file.status}}</span> </span>
                             </li>
                             {% endfor %}
                             {% else %}

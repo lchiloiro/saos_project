@@ -15,10 +15,18 @@ services:
     image: quay.io/keycloak/keycloak:26.2.4
     ports:
       - 8081:8080
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin1
-    command: [ "start-dev", "--proxy-headers", "xforwarded", "--hostname-strict=false", "--hostname", "https://keycloak.saos.local", "--hostname-backchannel-dynamic", "true", "--http-port", "80" ]
+    env_file: ".env"
+    command: [
+      "start-dev",
+      "--proxy-headers", "xforwarded",
+      "--hostname-strict=false",
+      "--hostname", "https://keycloak.saos.local",
+      "--hostname-backchannel-dynamic", "true",
+      "--http-port", "80",
+      "--log", "console,syslog",
+      "--log-level", "INFO",
+      "--log-syslog-endpoint", "logstash:514"
+    ]
     volumes:
       - ./keycloak:/opt/keycloak/data/
     networks:
@@ -48,9 +56,7 @@ services:
       - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+    env_file: ".env"
     networks:
       - saos-network
 
@@ -59,16 +65,66 @@ services:
     restart: unless-stopped
     ports:
       - 8082:8080
-    environment:
-      - WHODB_POSTGRES_1={"host":"db","user":"admin","password":"admin","database":"postgres"}
+    env_file: ".env"
     networks:
       - saos-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.audit.enabled=true
+    env_file: ".env"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - saos-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_SECURITY_ENABLED=false
+    env_file: ".env"
+    ports:
+      - "5601:5601"
+    networks:
+      - saos-network
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.17.0
+    container_name: logstash
+    environment:
+      - LS_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - ./logstash/config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro,Z
+      - ./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro,Z
+    ports:
+      - "5044:5044"
+    networks:
+      - saos-network
+    depends_on:
+      - elasticsearch
 
 volumes:
   pgdata:
   caddy_config:
   caddy_data:
-
+  elasticsearch-data:
+    driver: local
 
 networks:
   saos-network:
