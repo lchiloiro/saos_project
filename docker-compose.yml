@@ -25,7 +25,9 @@ services:
       "--http-port", "80",
       "--log", "console,syslog",
       "--log-level", "INFO",
-      "--log-syslog-endpoint", "logstash:514"
+      "--log-syslog-endpoint", "logstash:514",
+      "--spi-events-listener-jboss-logging-success-level=info",
+      "--spi-events-listener-jboss-logging-error-level=error"
     ]
     volumes:
       - ./keycloak:/opt/keycloak/data/

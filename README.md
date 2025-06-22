@@ -99,6 +99,7 @@ Consentire una gestione sicura e privata dei propri file all’interno della pia
 
 ## Consultare i documenti approvati
 A questa sezione vi accedono tutti gli utenti con qualsiasi ruolo, purchè siano autenticati.
+
 ![doc](readme_img/img4.png)
 
 ## Accedere alla sezione per gli editor
