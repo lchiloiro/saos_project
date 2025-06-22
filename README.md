@@ -51,6 +51,10 @@ sicure tra i microservizi e l’utente finale.
 La libreria dotenv permette di caricare variabili di ambiente da file .env in modo sicuro.
 Consente di proteggere chiavi segrete e configurazioni sensibili senza esporle direttamente nel codice sorgente.
 
+## UV – Python Package Manager
+UV è un tool molto veloce per installare e gestire le librerie Python. Funziona come pip, ma è molto più rapido.
+Permette anche di creare ambienti virtuali. È utile per chi lavora con tanti pacchetti e vuole risparmiare tempo.
+
 # Funzionalità Principali
 
 ## Login
@@ -94,6 +98,7 @@ Consentire una gestione sicura e privata dei propri file all’interno della pia
 ![profilo utente](readme_img/img3.png)
 
 ## Consultare i documenti approvati
+A questa sezione vi accedono tutti gli utenti con qualsiasi ruolo, purchè siano autenticati.
 ![doc](readme_img/img4.png)
 
 ## Accedere alla sezione per gli editor
@@ -151,9 +156,50 @@ attività.
 | Approvare o rifiutare file             | ❌      | ✅     | ❌              |
 
 # Avvio del Progetto
+## Clona repository
+Clona il repository
+
+```sh 
+git clone https://github.com/lchiloiro/saos_project.git
+```
+
+## Chiavi segrete e configurazione keycloak
+
+Per le chiavi segrete e credenziali sono stati messi a disposizione i `.env` e `client_secrets.json` con i vari campi vuoti da compilare con i propri valori.
+
+## Database
+
+Creare le tabelle su `db.saos.local`
+
+```sql
+CREATE TABLE users(
+  id SERIAL PRIMARY KEY,
+  id_keycloak VARCHAR NOT NULL
+)
+```
+
+```sql
+CREATE TABLE files(
+  id SERIAL PRIMARY KEY,
+  pathname VARCHAR NOT NULL,
+  user_id INT references users(id),
+  created_at TIMESTAMPTZ,
+  original_filename VARCHAR,
+  status VARCHAR DEFAULT 'pending'
+)
+```
+
+## Inizializzazione servizi
+
+Avviare l'app tramite 
+
+```sh
+docker compose up --build -d
+```
+
+Buon divertimento!
 
 # Struttura del Progetto
-`fare riferimento a UV!`
 
 ## Organizzazione delle Directory
 **saos_project/** - Core dell'applicazione Flask
@@ -190,9 +236,10 @@ attività.
 - **kibana.saos.local/** - Dashboard di kibana per logging
 
 **Altri file e directory importanti**
-- **.env.example** - Configurazione variabili ambiente
+- **.env.example** - Esempio di configurazione variabili ambiente
 - **docker-compose.yml** - Orchestrazione container
 - **Dockerfile** - Build applicazione
+- **Caddyfile** - Configurazione reverse proxy
 - **README** - File readme.md
 
 ## Flusso dell'Applicazione
