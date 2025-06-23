@@ -47,6 +47,18 @@ Caddy è un web server moderno e un reverse proxy automatizzato.
 Supporta automaticamente HTTPS tramite Let's Encrypt, semplifica la configurazione dei proxy e garantisce connessioni
 sicure tra i microservizi e l’utente finale.
 
+## Elasticsearch – Motore di ricerca e analisi distribuito
+È un motore di ricerca e analisi distribuito, basato su Apache Lucene. Permette di archiviare, cercare e analizzare grandi
+volumi di dati in tempo quasi reale, con supporto per ricerche complesse e aggregazioni.
+
+## Logstash – Pipeline di elaborazione e trasformazione dati
+È uno strumento per la raccolta, trasformazione e trasferimento dei dati. Può ingestrare dati da molteplici fonti, elaborarli
+tramite filtri e inviarli a Elasticsearch (o altre destinazioni). È molto usato per la gestione di log.
+
+## Kibana – Strumento di visualizzazione e analisi interattiva
+È un’interfaccia grafica che consente di visualizzare e analizzare i dati contenuti in Elasticsearch tramite
+dashboard, grafici, e strumenti di esplorazione interattivi.
+
 ## dotenv - Gestione sicura di variabili di ambiente
 La libreria dotenv permette di caricare variabili di ambiente da file .env in modo sicuro.
 Consente di proteggere chiavi segrete e configurazioni sensibili senza esporle direttamente nel codice sorgente.
@@ -74,7 +86,8 @@ Una volta effettuato l’accesso, l’utente autenticato accede alla homepage da
   - Visualizzare il profilo utente: I dati del profilo vengono recuperati tramite integrazione con Keycloak, che gestisce l'autenticazione e l’autorizzazione in modo sicuro 
   - Consultare i documenti approvati: L’utente può accedere alla lista completa di tutti i documenti che sono stati approvati e resi disponibili nel sistema
   - Accedere alla sezione per gli editor: Rotta visualizzabile esclusivamente dagli utenti col ruolo di Editor
-  - Accedere alla sezione per gli amministratore: Rotta visualizzabile esclusivamente dagli utenti col ruolo di Admin
+  - Accedere alla sezione per gli amministratori: Rotta visualizzabile esclusivamente dagli utenti col ruolo di Admin
+  - Accedere alla sezione per i log di sistema: Rotta visualizzabile esclusivamente dagli utenti col ruolo di Admin
   - Effettuare il logout: L’utente può terminare la propria sessione in modo sicuro tramite il meccanismo di logout gestito da Keycloak
 
 ## Visualizzare il profilo Utente
@@ -127,12 +140,17 @@ L’Amministratore è l’utente con il livello di autorizzazione più alto nell
 Ha una visione globale del sistema e può monitorare l’attività di tutti gli utenti.
 
 ### Permessi dell’Amministratore:
-- Accedere a una sezione esclusiva dedicata al monitoraggio completo.
+- Accedere a una sezione esclusiva dedicata al monitoraggio completo di files e utenti.
+- Accedere a una sezione esclusiva dedicata al logging del sistema.
 
 ![admin](readme_img/img6_1.png)
 
+![admin](readme_img/img6_2.png)
+
 - Visualizzare tutti gli utenti registrati e i relativi file caricati. 
 - Consultare lo stato e i dettagli di ogni file presente nel sistema.
+- Analizzare da Kibana i log ricevuti da Keycloak (eventi di login, logout, etc.. )
+  - Spiegata nella sezione di Funzionalità extra
 
 ![admin](readme_img/img6.png)
 
@@ -145,18 +163,63 @@ attività.
 ## Effettuare il logout
 ![logout](readme_img/img7.png)
 
+# Funzionalità extra
+
+## Logging di Keycloak
+Per permettere all’utente con ruolo di admin di visualizzare e analizzare i log di Keycloak in modo efficace e
+centralizzato, è stato implementato un flusso basato sullo stack ELK (Elasticsearch, Logstash, Kibana).
+Il processo si articola nei seguenti passaggi:
+
+### Abilitazione dei Log dalla dashboard di Keycloak
+All’interno della dashboard di Keycloak sono stati attivati i log di eventi per monitorare attività come
+autenticazioni, logout, errori, e modifiche amministrative.
+
+![log](readme_img/img8_2.png)
+
+![log](readme_img/img8_1.png)
+
+### Raccolta e trasformazione dei log tramite Logstash
+È stata configurata (`logstash.conf`) una pipeline Logstash per acquisire i log di Keycloak da connessioni TCP sulla
+porta 514 per log syslog remoti.
+
+![log](readme_img/img8.png)
+
+### Indicizzazione e consultazione dei Log tramite Elasticsearch e Kibana
+I log elaborati da Logstash vengono indicizzati in Elasticsearch in indici giornalieri (`keycloak-logs-YYYY.MM.dd`), permettendo
+una ricerca rapida e scalabile.
+
+Kibana è configurato per visualizzare questi indici per gli admin, che possono:
+- Filtrare i log per tipo di evento, utente, client o indirizzo IP.
+- Analizzare eventi di login, logout e tentativi falliti.
+- Visualizzare timeline e statistiche aggregate.
+- Creare dashboard personalizzate per visualizzare:
+  - Timeline degli accessi
+  - Mappe di provenienza degli utenti 
+  - Grafici a barre, a torta o tabelle per analizzare tipologie di eventi
+  - Indicatori di performance e sicurezza in tempo reale
+
+Esempio di log su Kibana su un evento di LOGOUT:
+
+![log](readme_img/img8_4.png)
+
+Esempio di dashboard per l'amministratore per tracciare i vari eventi di autenticazione effettuati dai singoli utenti della piattaforma:
+
+![log](readme_img/img8_3.png)
+
 # Riepilogo dei ruoli del utente
-| Funzionalità                           | Viewer | Editor | Amministratore |
-| -------------------------------------- | ------ | ----- | -------------- |
-| Login / Logout                         | ✅      | ✅     | ✅              |
-| Visualizzare i propri dati utente      | ✅      | ✅     | ✅              |
-| Caricare file                          | ✅      | ✅     | ✅              |
-| Visualizzare i propri file             | ✅      | ✅     | ✅              |
-| Visualizzare tutti gli utenti          | ❌      | ❌     | ✅              |
-| Visualizzare tutti i file caricati     | ❌      | ✅      | ✅              |
-| Approvare o rifiutare file             | ❌      | ✅     | ❌              |
+| Funzionalità                       | Viewer | Editor | Amministratore |
+|------------------------------------| ------ | ---- | -------------- |
+| Login / Logout                     | ✅      | ✅    | ✅              |
+| Visualizzare i propri dati utente  | ✅      | ✅    | ✅              |
+| Caricare file                      | ✅      | ✅    | ✅              |
+| Visualizzare i propri file         | ✅      | ✅    | ✅              |
+| Visualizzare tutti gli utenti      | ❌      | ❌    | ✅              |
+| Visualizzare tutti i file caricati | ❌      | ✅     | ✅              |
+| Approvare o rifiutare file         | ❌      | ✅    | ❌              |
+| Visualizzare log di sistema        | ❌      | ❌    | ✅              |
 
 # Avvio del Progetto
+
 ## Clona repository
 Clona il repository
 
@@ -238,6 +301,7 @@ Buon divertimento!
 
 **Altri file e directory importanti**
 - **.env.example** - Esempio di configurazione variabili ambiente
+- **client_secrets.example** - Esempio di configurazione per OIDC con Keycloak
 - **docker-compose.yml** - Orchestrazione container
 - **Dockerfile** - Build applicazione
 - **Caddyfile** - Configurazione reverse proxy
@@ -298,7 +362,7 @@ users (1) → (N) files:
 
 # Sicurezza Implementata
 | Aspetto                 | Protezione Implementata                           |
-| ----------------------- | ------------------------------------------------- |
+| ----------------------- |---------------------------------------------------|
 | Autenticazione          | Keycloak via OIDC                                 |
 | Gestione sessioni       | Token OIDC validati                               |
 | Controllo degli accessi | RBAC per ogni rotta e funzionalità                |
@@ -306,7 +370,7 @@ users (1) → (N) files:
 | Comunicazione sicura    | HTTPS tramite Caddy e Let’s Encrypt               |
 | Isolamento dei servizi  | Docker                                            |
 | Protezione del database | Accesso ristretto, solo dati tecnici memorizzati  |
-| Tracciabilità           | Logging di azioni rilevanti                       |
+| Tracciabilità           | Logging di azioni rilevanti con STACK ELK         |
 
 # Info e contatti
 Nome e cognome: Lorenzo Chiloiro

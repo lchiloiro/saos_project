@@ -98,6 +98,16 @@ def admin():
     users_files = get_users_and_files()
     return render_template('admin.html', users_files=users_files)
 
+@app.route('/kibana')
+@oidc.require_login
+def kibana():
+    # Verifica se l'utente ha il ruolo di Admin
+    roles = get_user_roles()
+    if 'Admin' not in roles:
+        abort(403)
+
+    return redirect("https://kibana.saos.local")
+
 @app.route('/uploads/<filename>')
 @oidc.require_login
 def uploaded_file(filename):
